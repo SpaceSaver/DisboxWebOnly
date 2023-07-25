@@ -80,6 +80,10 @@ class DiscordWebhookClient {
         return response;
     }
 
+    async getWebhookInfo() {
+        return await (await fetch(this.baseUrl)).json();
+    }
+
     async sendAttachment(filename, blob) {
         const formData = new FormData();
         formData.append('payload_json', JSON.stringify({}));
