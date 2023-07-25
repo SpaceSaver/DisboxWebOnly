@@ -22,32 +22,8 @@ async function* readFile(file, chunkSize) {
     }
 }
 
-async function fetchUrlFromExtension(url) {
-    return new Promise((resolve, reject) => {
-        try {
-            chrome.runtime.sendMessage("jklpfhklkhbfgeencifbmkoiaokeieah", { message: {url: url } }, response => {
-                if (!response || !("data" in response)) {
-                    resolve(null);
-                }
-                resolve(response.data);
-
-            });
-        } catch {
-            resolve(null);
-        }
-    });
-}
-
-async function fetchUrlFromProxy(url) {
-    return await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);  
-}
-
 async function fetchUrl(url) {
-    const extensionResult = await fetchUrlFromExtension(url);
-    if (extensionResult !== null) {
-        return await (await fetch(extensionResult)).blob();
-    }
-    return await (await fetchUrlFromProxy(url)).blob();
+    return (await (await fetch(url)).blob());
 }
 
 
