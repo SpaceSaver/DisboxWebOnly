@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/web/static/css/main.bbbdd42c.css",
-    "main.js": "/web/static/js/main.fd93e37f.js",
-    "static/js/787.c4e7f8f9.chunk.js": "/web/static/js/787.c4e7f8f9.chunk.js",
-    "index.html": "/web/index.html",
-    "main.bbbdd42c.css.map": "/web/static/css/main.bbbdd42c.css.map",
-    "main.fd93e37f.js.map": "/web/static/js/main.fd93e37f.js.map",
-    "787.c4e7f8f9.chunk.js.map": "/web/static/js/787.c4e7f8f9.chunk.js.map"
+    "main.css": "/DisboxWebOnly/static/css/main.bbbdd42c.css",
+    "main.js": "/DisboxWebOnly/static/js/main.978a2ae2.js",
+    "static/js/787.c4e7f8f9.chunk.js": "/DisboxWebOnly/static/js/787.c4e7f8f9.chunk.js",
+    "index.html": "/DisboxWebOnly/index.html",
+    "main.bbbdd42c.css.map": "/DisboxWebOnly/static/css/main.bbbdd42c.css.map",
+    "main.978a2ae2.js.map": "/DisboxWebOnly/static/js/main.978a2ae2.js.map",
+    "787.c4e7f8f9.chunk.js.map": "/DisboxWebOnly/static/js/787.c4e7f8f9.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.bbbdd42c.css",
-    "static/js/main.fd93e37f.js"
+    "static/js/main.978a2ae2.js"
   ]
 }
