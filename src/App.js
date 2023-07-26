@@ -75,6 +75,7 @@ function App() {
         }
 
         const webhookUrl = localStorage.getItem("webhookUrl");
+        const loginKey = localStorage.getItem("loginKey");
         async function init() {
             if (webhookUrl) {
                 const manager = await DisboxFileManager.create(webhookUrl);

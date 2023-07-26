@@ -9,7 +9,11 @@ function Setup() {
     const onContinue = (event) => {
         event.preventDefault();
         const webhookUrl = document.getElementById("webhookUrl").value;
-        localStorage.setItem("webhookUrl", webhookUrl);
+        if (webhookUrl) {
+            localStorage.setItem("webhookUrl", webhookUrl);
+        } else {
+            localStorage.setItem("loginKey", document.querySelector("#login").value);
+        }
         navigate("/");
     };
     return (<div>
@@ -40,6 +44,15 @@ function Setup() {
                 <Form onSubmit={onContinue}>
                     <Form.Group>
                         <Form.Control id="webhookUrl" type="password" placeholder="Webhook URL" style={{ width: "80%", margin: "auto", fontSize: "2rem" }} />
+                    </Form.Group>
+                    <Button type="submit" variant="primary" style={{ width: "80%", margin: "auto", marginTop: "1rem", fontSize: "2rem" }}><b>Create</b></Button>
+                </Form>
+                <br />
+                This will show your login key: <input type="text" name="login_key_preview" placeholder="XXXXXX/XXXXXXX/XXXXXXX" disabled />
+                <br />
+                <Form onSubmit={onContinue}>
+                    <Form.Group>
+                        <Form.Control id="login" type="password" placeholder="Login to an existing account" style={{ width: "80%", margin: "auto", fontSize: "2rem" }} />
                     </Form.Group>
                     <Button type="submit" variant="primary" style={{ width: "80%", margin: "auto", marginTop: "1rem", fontSize: "2rem" }}><b>Continue</b></Button>
                 </Form>

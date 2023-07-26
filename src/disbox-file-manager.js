@@ -81,7 +81,10 @@ class DiscordWebhookClient {
     }
 
     async getWebhookInfo() {
-        return await (await fetch(this.baseUrl)).json();
+        if (!this.info) {
+            this.info = await (await fetchFromApi("")).json();
+        }
+        return this.info;
     }
 
     async sendAttachment(filename, blob) {
@@ -91,6 +94,18 @@ class DiscordWebhookClient {
         const response = await this.fetchFromApi("?wait=true", {
             type: "sendAttachment",
             method: 'POST',
+            body: formData,
+        });
+        return await response.json();
+    }
+
+    async updateAttachment(id, filename, blob) {
+        const formData = new FormData();
+        formData.append('payload_json', JSON.stringify({}));
+        formData.append('file', blob, filename);
+        const response = await this.fetchFromApi(`/messages/${id}?wait=true`, {
+            type: "sendAttachment",
+            method: 'PATCH',
             body: formData,
         });
         return await response.json();
@@ -148,6 +163,26 @@ class DiscordFileStorage {
     }
 
 
+    async update(id, sourceFile, namePrefix, onProgress = null) {
+        const messageIds = [];
+        let uploadedBytes = 0;
+        let index = 0;
+        if (onProgress) {
+            onProgress(0, sourceFile.size);
+        }
+        for await (const chunk of readFile(sourceFile, FILE_CHUNK_SIZE)) {
+            const result = await this.webhookClient.sendAttachment(`${namePrefix}_${index}`, new Blob([chunk]));
+            messageIds.push(result.id);
+            uploadedBytes += chunk.byteLength;
+            index++;
+            if (onProgress) {
+                onProgress(uploadedBytes, sourceFile.size);
+            }
+        }
+        return messageIds;
+    }
+
+
     async download(messageIds, writeStream, onProgress = null, fileSize=-1) {
         const attachmentUrls = await this.getAttachmentUrls(messageIds);
         await downloadFromAttachmentUrls(attachmentUrls, writeStream, onProgress, fileSize);
@@ -174,20 +209,22 @@ class DisboxFileManager {
         const url = new URL(webhookUrl);
         let fileTrees = {};
 
-        // Handle Discord changing webhook URLs
-        for (const hostname of ["discord.com", "discordapp.com"]) {
-            url.hostname = hostname;
-            const result = await fetch(`${SERVER_URL}/files/get/${sha256(url.href)}`);
-            if (result.status === 200) {
-                fileTrees[url.href] = await result.json();
-            }
-        }
-        if (fileTrees.length === 0) {
-            throw new Error(`Failed to get files for user.`);
-        }
+        // // Handle Discord changing webhook URLs
+        // for (const hostname of ["discord.com", "discordapp.com"]) {
+        //     url.hostname = hostname;
+        //     const result = await fetch(`${SERVER_URL}/files/get/${sha256(url.href)}`);
+        //     if (result.status === 200) {
+        //         fileTrees[url.href] = await result.json();
+        //     }
+        // }
+        // const fileTrees
+        // if (fileTrees.length === 0) {
+        //     throw new Error(`Failed to get files for user.`);
+        // }
 
-        // If one of them has entries, choose it no matter what the entered URL was.
-        const [chosenUrl, fileTree] = Object.entries(fileTrees).sort((f1, f2) => f2[1].length - f1[1].length)[0];
+        // // If one of them has entries, choose it no matter what the entered URL was.
+        // const [chosenUrl, fileTree] = Object.entries(fileTrees).sort((f1, f2) => f2[1].length - f1[1].length)[0];
+        
 
         return new this(sha256(chosenUrl), new DiscordFileStorage(webhookUrl), fileTree);
     }
