@@ -82,7 +82,7 @@ class DiscordWebhookClient {
 
     async getWebhookInfo() {
         if (!this.info) {
-            this.info = await (await fetchFromApi("")).json();
+            this.info = await (await this.fetchFromApi("")).json();
         }
         return this.info;
     }
@@ -226,7 +226,7 @@ class DisboxFileManager {
         // const [chosenUrl, fileTree] = Object.entries(fileTrees).sort((f1, f2) => f2[1].length - f1[1].length)[0];
         
 
-        return new this(sha256(chosenUrl), new DiscordFileStorage(webhookUrl), fileTree);
+        return //new this(sha256(chosenUrl), new DiscordFileStorage(webhookUrl), fileTree);
     }
 
     constructor(userId, storage, fileTree) {
