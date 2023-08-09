@@ -2,20 +2,37 @@ import { Button, Form } from "react-bootstrap";
 import { useNavigate } from 'react-router-dom';
 import './App.css';
 import NavigationBar from './NavigationBar';
+import {DiscordWebhookClient} from './disbox-file-manager';
 
 function Setup() {
     const navigate = useNavigate();
 
     const onContinue = (event) => {
         event.preventDefault();
-        const webhookUrl = document.getElementById("webhookUrl").value;
-        if (webhookUrl) {
-            localStorage.setItem("webhookUrl", webhookUrl);
-        } else {
-            localStorage.setItem("loginKey", document.querySelector("#login").value);
-        }
+        localStorage.setItem("loginKey", document.querySelector("#login").value);
         navigate("/");
     };
+    const onRegister = async (event) => {
+        event.preventDefault();
+        const webhookUrl = document.getElementById("webhookUrl").value;
+        const keybox = document.querySelector("[name=\"login_key_preview\"]");
+        let webhookPath = "";
+        try {
+            webhookPath = (new URL(webhookUrl)).pathname;
+        } catch {}
+        const webhookParts = /^\/api\/webhooks\/(?<webhook_id>.+?)\/(?<webhook_token>.+?)$/.exec(webhookPath)?.groups;
+        if (!webhookParts) {
+            keybox.value = "Please check your webhook and try again."
+        }
+        const wh = new DiscordWebhookClient(webhookParts.webhook_id, webhookParts.webhook_token);
+        try {
+            const root = await wh.sendAttachment("i.png", new Blob([JSON.stringify({children: {}})], {type: "application/json"}));
+            keybox.value = `${webhookParts.webhook_id}/${webhookParts.webhook_token}/${root.id}`;
+        } catch(e) {
+            keybox.value = "Please check your webhook and try again.";
+            console.error(e);
+        }
+    }
     return (<div>
         <NavigationBar />
         <div className="App App-header" style={{ color: "black" }}>
@@ -41,21 +58,24 @@ function Setup() {
                     <div style={{ height: "1rem" }} />
                     <b style={{ color: "#555555" }}>5.</b> Paste your URL here:
                 </div>
-                <Form onSubmit={onContinue}>
+                <Form onSubmit={onRegister}>
                     <Form.Group>
-                        <Form.Control id="webhookUrl" type="password" placeholder="Webhook URL" style={{ width: "80%", margin: "auto", fontSize: "2rem" }} />
+                        <Form.Control id="webhookUrl" type="text" placeholder="Webhook URL" style={{ width: "80%", margin: "auto", fontSize: "2rem" }} />
                     </Form.Group>
                     <Button type="submit" variant="primary" style={{ width: "80%", margin: "auto", marginTop: "1rem", fontSize: "2rem" }}><b>Create</b></Button>
                 </Form>
                 <br />
                 This will show your login key: <input type="text" name="login_key_preview" placeholder="XXXXXX/XXXXXXX/XXXXXXX" disabled />
                 <br />
+                <br />
                 <Form onSubmit={onContinue}>
                     <Form.Group>
-                        <Form.Control id="login" type="password" placeholder="Login to an existing account" style={{ width: "80%", margin: "auto", fontSize: "2rem" }} />
+                        <Form.Control id="login" type="password" placeholder="Login to an existing account with login key" style={{ width: "80%", margin: "auto", fontSize: "2rem" }} />
                     </Form.Group>
                     <Button type="submit" variant="primary" style={{ width: "80%", margin: "auto", marginTop: "1rem", fontSize: "2rem" }}><b>Continue</b></Button>
                 </Form>
+                <br />
+                <br />
             </div>
         </div>
     </div>

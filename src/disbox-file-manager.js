@@ -1,7 +1,8 @@
 /*global chrome*/
 import { sha256 } from 'js-sha256';
+import ImageDataCrap from './image-data-crap';
 
-const SERVER_URL = 'https://disboxserver.azurewebsites.net';
+const SERVER_URL = 'https://e';
 export const FILE_DELIMITER = '/';
 const FILE_CHUNK_SIZE = 25 * 1024 * 1023 // Almost 25MB
 
@@ -45,9 +46,9 @@ export async function downloadFromAttachmentUrls(attachmentUrls, writeStream, on
 }
 
 class DiscordWebhookClient {
-    constructor(webhookUrl) {
-        const id = webhookUrl.split('/').slice(0, -1).pop();
-        const token = webhookUrl.split('/').pop();
+    constructor(id, token) {
+        // const id = webhookUrl.split('/').slice(0, -1).pop();
+        // const token = webhookUrl.split('/').pop();
         this.baseUrl = `https://discordapp.com/api/webhooks/${id}/${token}`;
         this.rateLimitWaits = {};
     }
@@ -89,8 +90,9 @@ class DiscordWebhookClient {
 
     async sendAttachment(filename, blob) {
         const formData = new FormData();
-        formData.append('payload_json', JSON.stringify({}));
-        formData.append('file', blob, filename);
+        // formData.append('payload_json', JSON.stringify({}));
+
+        formData.append('file', await ImageDataCrap.encodeBlob(blob), filename);
         const response = await this.fetchFromApi("?wait=true", {
             type: "sendAttachment",
             method: 'POST',
@@ -99,14 +101,35 @@ class DiscordWebhookClient {
         return await response.json();
     }
 
-    async updateAttachment(id, filename, blob) {
+    /**
+     * 
+     * @param {string} id 
+     * @param {Array.<{name: string, blob: Blob}>} files 
+     * @returns 
+     */
+    async replaceAttachments(id, files) { //files: [{name: "name", blob: blobby}]
         const formData = new FormData();
         formData.append('payload_json', JSON.stringify({}));
-        formData.append('file', blob, filename);
-        const response = await this.fetchFromApi(`/messages/${id}?wait=true`, {
+        // formData.append('file', blob, filename);
+        await this.fetchFromApi(`/messages/${id}`, {
             type: "sendAttachment",
             method: 'PATCH',
             body: formData,
+        });
+        for (let x = 0; x < files.length; x++) {
+            await this.appendAttachment(id, files[x].name, files[x].blob);
+        }
+        const response = await this.fetchFromApi(`/messages/${id}`);
+        return await response.json();
+    }
+
+    async appendAttachment(id, filename, blob) {
+        const formData = new FormData();
+        formData.append('file', blob, filename);
+        const response = this.fetchFromApi(`/messages/${id}`, {
+            type: "sendAttachment",
+            method: 'PATCH',
+            body: formData
         });
         return await response.json();
     }
@@ -129,8 +152,21 @@ class DiscordWebhookClient {
 }
 
 class DiscordFileStorage {
-    constructor(webhookUrl) {
-        this.webhookClient = new DiscordWebhookClient(webhookUrl);
+    constructor(id, token, root) {
+        this.webhookClient = new DiscordWebhookClient(id, token);
+        this.root = root;
+    }
+
+
+    async grabAttachments(messageId) {
+        const message = await this.webhookClient.getMessage(messageId);
+        const att_arr = [];
+        for (const x in message.attachments) {
+            const att = message.attachments[x];
+            const blobby = await ImageDataCrap.decodeBlob(await (await fetch(att.proxy_url)).blob());
+            att_arr.push({name: att.filename, file: blobby});
+        }
+        return att_arr;
     }
 
 
@@ -205,9 +241,8 @@ class DiscordFileStorage {
 
 
 class DisboxFileManager {
-    static async create(webhookUrl) {
-        const url = new URL(webhookUrl);
-        let fileTrees = {};
+    static async create(loginkey) {
+        // let fileTrees = {};
 
         // // Handle Discord changing webhook URLs
         // for (const hostname of ["discord.com", "discordapp.com"]) {
@@ -224,9 +259,16 @@ class DisboxFileManager {
 
         // // If one of them has entries, choose it no matter what the entered URL was.
         // const [chosenUrl, fileTree] = Object.entries(fileTrees).sort((f1, f2) => f2[1].length - f1[1].length)[0];
-        
-
-        return //new this(sha256(chosenUrl), new DiscordFileStorage(webhookUrl), fileTree);
+        const splitkey = loginkey.split("/");
+        const webhook_id = splitkey[0];
+        const webhook_token = splitkey[1];
+        const root_id = splitkey[2];
+        const filestore = new DiscordFileStorage(webhook_id, webhook_token, root_id);
+        const atts = await filestore.grabAttachments(root_id);
+        const fileTree = JSON.parse(await atts.filter(att => att.name === "i.png")[0].file.text());
+        console.log(fileTree);
+        // let fileTree = await 
+        return new this(loginkey, filestore, fileTree);
     }
 
     constructor(userId, storage, fileTree) {
@@ -234,6 +276,8 @@ class DisboxFileManager {
         this.discordFileStorage = storage;
         this.fileTree = fileTree;
     }
+
+
 
 
     getFile(path, copy = true) {
@@ -475,5 +519,6 @@ class DisboxFileManager {
 }
 
 export default DisboxFileManager;
+export {DiscordWebhookClient};
 
 
