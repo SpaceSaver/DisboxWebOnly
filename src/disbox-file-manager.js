@@ -265,7 +265,11 @@ class DisboxFileManager {
         const root_id = splitkey[2];
         const filestore = new DiscordFileStorage(webhook_id, webhook_token, root_id);
         const atts = await filestore.grabAttachments(root_id);
-        const fileTree = JSON.parse(await atts.filter(att => att.name === "i.png")[0].file.text());
+        function pass(inp) {
+            console.log(inp);
+            return inp;
+        }
+        const fileTree = JSON.parse(pass(await atts.filter(att => att.name === "i.png")[0].file.text()));
         console.log(fileTree);
         // let fileTree = await 
         return new this(loginkey, filestore, fileTree);

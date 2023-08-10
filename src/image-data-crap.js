@@ -1,7 +1,7 @@
 class ImageDataCrap {
     static key = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
     /**
-     * 
+     * @deprecated Uses classic encoding style
      * @param {string} data Base64 data string
      */
     static encode(data) {
@@ -22,8 +22,33 @@ class ImageDataCrap {
             }, "image/png", 1);
         });
     }
+    /**
+     * 
+     * @param {Blob} blob 
+     * @returns 
+     */
     static async encodeBlob(blob) {
-        return await this.encode(await (this.blobToBase64(blob)));
+        // return await this.encode(await (this.blobToBase64(blob)));
+        const data = new Uint8ClampedArray(await blob.arrayBuffer());
+        const first = data.byteLength%4; //Amount of bytes from the last pixel that are valid
+        const store = new Uint8ClampedArray(new ArrayBuffer(data.byteLength+4+(4-first)));
+        store.set([first, 0, 0, 0], 0);
+        store.set(data, 4);
+        const width = store.length/4;
+        const canvas = this.createCanvas();
+        canvas.width = width;
+        const ctx = canvas.getContext("2d", {alpha: false});
+        const imgstore = new ImageData(store, width, 1);
+        console.log(data);
+        console.log(store);
+        ctx.putImageData(imgstore, 0, 0);
+        return await new Promise((resolve) => {
+            canvas.toBlob(blobby => {
+                canvas.remove();
+                console.log(URL.createObjectURL(blobby));
+                resolve(blobby);
+            }, "image/png", 1);
+        });
     }
     static blobToBase64(blob) {
         const reader = new FileReader();
@@ -41,9 +66,26 @@ class ImageDataCrap {
     }
 
     static async decodeBlob(imageblob) {
-        return await this.base64ToBlob(await this.decode(imageblob));
+        const bitmap = await createImageBitmap(imageblob);
+        const canvas = this.createCanvas();
+        canvas.width = bitmap.width;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(bitmap, 0, 0);
+        const whole = ctx.getImageData(0, 0, canvas.width, 1).data;
+        console.log(whole);
+        const first = whole[0];
+        console.log(first);
+        const file = whole.slice(4, whole.length - (4 - first));
+        console.log(file);
+        canvas.remove();
+        return new Blob([file], {type: "application/octet-stream"});    
     }
 
+    /**
+     * @deprecated Uses classic encoding style
+     * @param {Blob} imageblob 
+     * @returns 
+     */
     static async decode(imageblob) {
         const bitmap = await createImageBitmap(imageblob);
         const canvas = this.createCanvas();
@@ -65,12 +107,12 @@ class ImageDataCrap {
 
     }
     static editPixel(ctx, x, y, r, g, b, a) {
-        ctx.fillStyle = "rgb(" + r + "," + g + "," + b + ")";//","+(a/255)+")";
+        ctx.fillStyle = "rgbA(" + r + "," + g + "," + b + ","+(a/255)+")";
         ctx.fillRect(x, y, 1, 1);
     }
     static createCanvas() {
         const canvas = document.createElement("canvas");
-        canvas.width = "100000";
+        canvas.width = "6200000";
         canvas.height = "1";
         document.body.append(canvas);
         return canvas;
