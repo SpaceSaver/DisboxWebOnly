@@ -30,10 +30,20 @@ class ImageDataCrap {
     static async encodeBlob(blob) {
         // return await this.encode(await (this.blobToBase64(blob)));
         const data = new Uint8ClampedArray(await blob.arrayBuffer());
-        const first = data.byteLength%4; //Amount of bytes from the last pixel that are valid
-        const store = new Uint8ClampedArray(new ArrayBuffer(data.byteLength+4+(4-first)));
-        store.set([first, 0, 0, 0], 0);
-        store.set(data, 4);
+        const first = (data.byteLength + data.byteLength/3)%4; //Amount of bytes from the last pixel that are valid
+        const store = new Uint8ClampedArray(new ArrayBuffer(data.byteLength + (data.byteLength/3) +4+(4-first)));
+        //            0   1   2  *3   4   5   6  *7   8   9   10   *11
+        store.set([first, 0, 0, 255], 0);
+        let y = 0;
+        for (let x = 1; x <= data.byteLength + (data.byteLength/3); x++){
+            if (x%4 == 0) {
+                store.set([255],x + 3);
+            } else {
+                store.set([data[y]], x + 3);
+                y++;
+            }
+        }
+        store.set([255], store.byteLength - 1);
         const width = store.length/4;
         const canvas = this.createCanvas();
         canvas.width = width;
@@ -75,7 +85,16 @@ class ImageDataCrap {
         console.log(whole);
         const first = whole[0];
         console.log(first);
-        const file = whole.slice(4, whole.length - (4 - first));
+        const fileWFiller = whole.slice(4, whole.length - (4 - first));
+        const file = new Uint8ClampedArray(new ArrayBuffer(fileWFiller.length/4*3));
+        let y = 0;
+        for (let x = 1; x <= fileWFiller.length; x++) {
+            if (x%4 == 0){
+            } else {
+                file.set([fileWFiller[x - 1]], y);
+                y++;
+            }
+        }
         console.log(file);
         canvas.remove();
         return new Blob([file], {type: "application/octet-stream"});    

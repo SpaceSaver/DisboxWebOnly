@@ -446,8 +446,6 @@ class DisboxFileManager {
         }
         const name = path.split(FILE_DELIMITER).slice(-1)[0];
         const parentFile = this.getParent(path);
-
-        const extra = type === 'directory' ? { children: {} } : {};
         const newFile = {
             parent_id: parentFile.id,
             name: name,
@@ -455,17 +453,20 @@ class DisboxFileManager {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
         }
-
-        const result = await fetch(`${SERVER_URL}/files/create/${this.userId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(newFile)
-        });
-        if (result.status !== 200) {
-            throw new Error(`Error creating file: ${result.status} ${result.statusText}`);
+        if (type === 'directory') {
+            newFile.children = {};
         }
+        // const result = await fetch(`${SERVER_URL}/files/create/${this.userId}`, {
+        //     method: 'POST',
+        //     headers: {
+        //         'Content-Type': 'application/json'
+        //     },
+        //     body: JSON.stringify(newFile)
+        // });
+        // if (result.status !== 200) {
+        //     throw new Error(`Error creating file: ${result.status} ${result.statusText}`);
+        // }
+        const result = "";
         const newFileId = Number(await result.text());
         parentFile.children[name] = { ...newFile, ...extra, id: newFileId };
         return this.getFile(path);
